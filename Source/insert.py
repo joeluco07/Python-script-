@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import PBKDF2PasswordHasher
 import random
 
 # Ruta del archivo de configuración
-CONFIG_FILE = 'config.json'
+CONFIG_FILE = '../config.json'
 
 def cargar_configuracion(config_file):
     """Carga la configuración desde un archivo JSON."""
@@ -44,6 +44,10 @@ def validar_username(card_no):
     return username
 
 def guardar_usuario_en_bd(usuario):
+    if not usuario.get('CardNo'):  # Verifica si el campo 'CardNo' está vacío o no existe
+        print(f"El registro de {usuario['name']} {usuario['lastname']} no se guardó porque el campo 'CardNo' está vacío.")
+        return  # Sale de la función y continúa con el siguiente registro
+    
     """Guarda el usuario en la base de datos PostgreSQL."""
     password_encriptado = encriptar_password(usuario['CardNo'])
     full_name = f"{usuario['name']} {usuario['lastname']}"
