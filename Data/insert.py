@@ -62,9 +62,9 @@ def guardar_usuario_en_bd(usuario):
         # connection = getConnection()
         cursor = connection.cursor()
 
-        # Insertar en la tabla `atlasfitnessclub.user_user`
+        # Insertar en la tabla `juanete.user_user`
         query_table_user_user = """
-        INSERT INTO atlasfitnessclub.user_user (
+        INSERT INTO juanete.user_user (
             password, last_login, is_superuser, names, username,image, email,
             is_active, is_staff, date_joined, is_change_password, email_reset_token
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -85,7 +85,7 @@ def guardar_usuario_en_bd(usuario):
         ))        
 
         # Buscar el ID del usuario recién insertado
-        select_query = "SELECT id FROM atlasfitnessclub.user_user WHERE username = %s"
+        select_query = "SELECT id FROM juanete.user_user WHERE username = %s"
         cursor.execute(select_query, (username,))
         user_id = cursor.fetchone()  # Obtener el resultado de la consulta
 
@@ -94,7 +94,7 @@ def guardar_usuario_en_bd(usuario):
 
                
         query_table_pos_client = """
-        INSERT INTO atlasfitnessclub.pos_client (
+        INSERT INTO juanete.pos_client (
             dni, mobile, birthdate, address, identification_type, send_email_invoice,
             user_id, memenddate, memstartdate, useridacces
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -113,7 +113,7 @@ def guardar_usuario_en_bd(usuario):
         ))
 
         query_table_user_user_groups = """
-        INSERT INTO atlasfitnessclub.user_user_groups (
+        INSERT INTO juanete.user_user_groups (
             user_id, group_id
         ) VALUES (%s, %s)
         """
