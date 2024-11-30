@@ -3,25 +3,38 @@ import psycopg2
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 import random
 
-# Configura conexión a la base de datos PostgreSQL
-DATABASE_CONFIG = {
-    'dbname': 'db',
-    'user': 'postgres',
-    'password': 'an822237',
-    'host': 'localhost',
-    'port': '5432'
-}
+# Ruta del archivo de configuración
+CONFIG_FILE = 'config.json'
 
-# Ruta del archivo JSON
-FILE_PATH = 'D:\\ProyectoDjango\\ScriptPos\\Python-script-\\Data\\data.json' # Ruta en Windows
-# FILE_PATH = '/home/user/Data/data.json' # Ruta en Linux  o la que corresponda en su sistema
+def cargar_configuracion(config_file):
+    """Carga la configuración desde un archivo JSON."""
+    try:
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+        return config
+    except FileNotFoundError:
+        print(f"No se encontró el archivo de configuración: {config_file}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Error al decodificar el archivo de configuración: {e}")
+        return None
+
+# Cargar la configuración
+config = cargar_configuracion(CONFIG_FILE)
+if not config:
+    exit("Error al cargar la configuración. Verifique el archivo config.json.")
+
+# Configuración de base de datos y esquema
+DATABASE_CONFIG = config['database']
+FILE_PATH = config['file_path']
+SCHEMA = config['schema']
 
 
 def encriptar_password(password):
     """Encripta la contraseña usando PBKDF2 y SHA-256."""
     hasher = PBKDF2PasswordHasher()
     return hasher.encode(password, hasher.salt())
-    
+
 def validar_username(card_no):
     # Asegurarse de que solo contenga dígitos y agregar ceros si es necesario
     if not card_no.isdigit():
@@ -35,8 +48,7 @@ def guardar_usuario_en_bd(usuario):
     password_encriptado = encriptar_password(usuario['CardNo'])
     full_name = f"{usuario['name']} {usuario['lastname']}"
     username = validar_username(usuario['CardNo'])
-    # username = usuario['CardNo']
-    date_joined = usuario['acc_startdate'][:10] # Extraer solo la fecha sin los últimos 9 caracteres    
+    date_joined = usuario['acc_startdate'][:10]  # Extraer solo la fecha sin los últimos 9 caracteres
     last_login = None
     is_superuser = False
     image = ''
@@ -59,19 +71,18 @@ def guardar_usuario_en_bd(usuario):
 
     try:
         connection = psycopg2.connect(**DATABASE_CONFIG)
-        # connection = getConnection()
         cursor = connection.cursor()
 
-        # Insertar en la tabla `juanete.user_user`
-        query_table_user_user = """
-        INSERT INTO juanete.user_user (
-            password, last_login, is_superuser, names, username,image, email,
+        # Insertar en la tabla `user_user` dentro del esquema dinámico
+        query_table_user_user = f"""
+        INSERT INTO {SCHEMA}.user_user (
+            password, last_login, is_superuser, names, username, image, email,
             is_active, is_staff, date_joined, is_change_password, email_reset_token
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(query_table_user_user, (
             password_encriptado,
-            last_login,     
+            last_login,
             is_superuser,
             full_name,
             username,
@@ -82,26 +93,26 @@ def guardar_usuario_en_bd(usuario):
             date_joined,
             is_change_password,
             email_reset_token
-        ))        
+        ))
 
         # Buscar el ID del usuario recién insertado
-        select_query = "SELECT id FROM juanete.user_user WHERE username = %s"
+        select_query = f"SELECT id FROM {SCHEMA}.user_user WHERE username = %s"
         cursor.execute(select_query, (username,))
-        user_id = cursor.fetchone()  # Obtener el resultado de la consulta
+        user_id = cursor.fetchone()
 
         if user_id:
-            user_id = user_id[0]  # Extraer el ID de la tupla     
+            user_id = user_id[0]  # Extraer el ID de la tupla
 
-               
-        query_table_pos_client = """
-        INSERT INTO juanete.pos_client (
+        # Insertar en la tabla `pos_client`
+        query_table_pos_client = f"""
+        INSERT INTO {SCHEMA}.pos_client (
             dni, mobile, birthdate, address, identification_type, send_email_invoice,
             user_id, memenddate, memstartdate, useridacces
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(query_table_pos_client, (
             username,
-            mobile,     
+            mobile,
             birthdate,
             address,
             identication_type,
@@ -112,17 +123,15 @@ def guardar_usuario_en_bd(usuario):
             useridacces
         ))
 
-        query_table_user_user_groups = """
-        INSERT INTO juanete.user_user_groups (
+        # Insertar en la tabla `user_user_groups`
+        query_table_user_user_groups = f"""
+        INSERT INTO {SCHEMA}.user_user_groups (
             user_id, group_id
         ) VALUES (%s, %s)
         """
-        cursor.execute(query_table_user_user_groups, (            
-            user_id,
-            group_id
-        ))
+        cursor.execute(query_table_user_user_groups, (user_id, group_id))
 
-        connection.commit()        
+        connection.commit()
         print(f"Usuario {full_name} guardado exitosamente con ID: {user_id}.")
 
     except Exception as e:
@@ -144,8 +153,6 @@ def leer_archivo_json(file_path):
 
 
 def main():
-
-    usuario = leer_archivo_json(FILE_PATH)
     """Carga el archivo JSON y guarda cada usuario en la base de datos."""
     try:
         usuarios = leer_archivo_json(FILE_PATH)
