@@ -1,0 +1,26 @@
+[
+    {
+      "USERID": 60,
+      "CardNo": "1954915450",
+      "name": "MARIA",
+      "lastname": "RIVAS",
+      "BIRTHDAY": "1999-01-28T00:00:00",
+      "HIREDDAY": "2024-11-25T00:00:00",
+      "street": "",
+      "email": "mariarivas@gmail.com",
+      "acc_startdate": "2024-11-25T00:00:00",
+      "acc_enddate": "2024-12-25T00:00:00"
+    },
+    {
+      "USERID": 61,
+      "CardNo": "1954915451",
+      "name": "JOSE",
+      "lastname": "PEREZ",
+      "BIRTHDAY": "1999-01-28T00:00:00",
+      "HIREDDAY": "2024-11-25T00:00:00",
+      "street": "",
+      "email": "joseperez@gmail.com",
+      "acc_startdate": "2024-11-25T00:00:00",
+      "acc_enddate": "2024-12-25T00:00:00"
+    }
+  ]
