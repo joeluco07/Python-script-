@@ -1,0 +1,11 @@
+{
+    "database": {
+        "dbname": "db",
+        "user": "postgres",
+        "password": "an822237",
+        "host": "localhost",
+        "port": "5432"
+    },
+    "file_path": "D:\\ProyectoDjango\\ScriptPos\\Python-script-\\Data\\datacompleta.json",
+    "schema": "atlasfitnessclub"
+}
