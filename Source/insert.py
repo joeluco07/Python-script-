@@ -2,6 +2,7 @@ import json
 import psycopg2
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 import random
+from datetime import datetime
 
 # Ruta del archivo de configuración
 CONFIG_FILE = '../config.json'
@@ -43,8 +44,71 @@ def validar_username(card_no):
     username = card_no.zfill(10)  # Completar con ceros al inicio hasta 10 dígitos
     return username
 
+def validar_campos_usuario(usuario):
+    """
+    Valida que los campos obligatorios de un usuario no estén vacíos.
+    Retorna True si todos los campos están presentes, de lo contrario retorna False.
+    """
+    campos_obligatorios = ['CardNo', 'acc_startdate', 'acc_enddate']
+    for campo in campos_obligatorios:
+        if not usuario.get(campo):
+            print(f"El registro de {usuario.get('name', 'N/A')} {usuario.get('lastname', 'N/A')} no se guardó o actualizó porque el campo '{campo}' está vacío.")
+            return False
+    return True
+
+def editar_usuario_en_bd(usuario):
+    
+    if not validar_campos_usuario(usuario):
+        return  # Sale de la función si los campos no son válidos
+    
+    connection = None  # Definir la conexión antes del bloque try
+    try:
+        connection = psycopg2.connect(**DATABASE_CONFIG)
+        cursor = connection.cursor()
+
+        username = validar_username(usuario['CardNo'])
+        jsonmemstartdate = usuario['acc_startdate'][:10]
+        jsonmemenddate   = usuario['acc_enddate'][:10]
+
+        # Convertir fechas del JSON a objetos datetime.date
+        json_start_date = datetime.strptime(jsonmemstartdate, '%Y-%m-%d').date()
+        json_end_date = datetime.strptime(jsonmemenddate, '%Y-%m-%d').date()
+
+        select_query = f"SELECT memstartdate, memenddate FROM {SCHEMA}.pos_client WHERE dni = %s" 
+        cursor.execute(select_query, (username,))
+        dni = cursor.fetchone()
+
+        if dni:
+            memstartdate = dni[0] 
+            memenddate   = dni[1]
+
+            # Comparar fechas y actualizar solo si son diferentes
+            # if (jsonmemstartdate != memstartdate) or (jsonmemenddate != memenddate):
+            if (json_start_date != memstartdate) or (json_end_date != memenddate):
+                update_query = f"""
+                UPDATE {SCHEMA}.pos_client
+                SET memstartdate = %s,
+                    memenddate = %s
+                WHERE dni = %s
+                """
+                cursor.execute(update_query, (jsonmemstartdate, jsonmemenddate, username))
+                connection.commit()  # Guardar cambios en la base de datos
+                print(f"Usuario {username} actualizado correctamente.")
+            else:
+                print(f"No se realizaron cambios para el usuario {username}.")
+        else:
+            print(f"No se encontró el usuario con DNI {username}.")
+
+    except Exception as e:
+        print(f"Error al conectar a la base de datos: {e}")
+        return   
+
 def guardar_usuario_en_bd(usuario):
-    if not usuario.get('CardNo'):  # Verifica si el campo 'CardNo' está vacío o no existe
+
+    if not validar_campos_usuario(usuario):
+        return  # Sale de la función si los campos no son válidos
+    
+    """ if not usuario.get('CardNo'):  # Verifica si el campo 'CardNo' está vacío o no existe
         print(f"El registro de {usuario['name']} {usuario['lastname']} no se guardó porque el campo 'CardNo' está vacío.")
         return  # Sale de la función y continúa con el siguiente registro
     
@@ -54,7 +118,7 @@ def guardar_usuario_en_bd(usuario):
     
     if not usuario.get('acc_enddate'):  # Verifica si el campo 'acc_enddate' está vacío o no existe
         print(f"El registro de {usuario['name']} {usuario['lastname']} no se guardó porque el campo 'acc_enddate' está vacío.")
-        return  # Sale de la función y continúa con el siguiente registro
+        return  # Sale de la función y continúa con el siguiente registro """
     
     """Guarda el usuario en la base de datos PostgreSQL."""
     password_encriptado = encriptar_password(usuario['CardNo'])
@@ -147,7 +211,7 @@ def guardar_usuario_en_bd(usuario):
         print(f"Usuario {full_name} guardado exitosamente con ID: {user_id}.")
 
     except Exception as e:
-        print(f"Error al guardar el usuario {full_name}: {e}")
+        print(f"Error al guardar el usuario {full_name}: ya existe en la base de datos")
     finally:
         if connection:
             cursor.close()
@@ -169,6 +233,8 @@ def main():
     try:
         usuarios = leer_archivo_json(FILE_PATH)
         for usuario in usuarios:
+            editar_usuario_en_bd(usuario)
+        for usuario in usuarios:            
             guardar_usuario_en_bd(usuario)
     except FileNotFoundError:
         print(f"No se encontró el archivo JSON en la ruta: {FILE_PATH}")
