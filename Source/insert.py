@@ -72,7 +72,7 @@ def guardar_usuario_en_bd(usuario):
     mobile = str(random.randint(1000000000, 9999999999))
     birthdate = usuario['BIRTHDAY']
     address = usuario['street']
-    identication_type = '05' #CEDULA
+    identication_type = '05' # Cedula
     send_email_invoice = False
     memenddate = usuario['acc_enddate']
     memstartdate = usuario['acc_startdate']
