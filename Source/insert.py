@@ -48,6 +48,14 @@ def guardar_usuario_en_bd(usuario):
         print(f"El registro de {usuario['name']} {usuario['lastname']} no se guardó porque el campo 'CardNo' está vacío.")
         return  # Sale de la función y continúa con el siguiente registro
     
+    if not usuario.get('acc_startdate'):  # Verifica si el campo 'acc_startdate' está vacío o no existe
+        print(f"El registro de {usuario['name']} {usuario['lastname']} no se guardó porque el campo 'acc_startdate' está vacío.")
+        return  # Sale de la función y continúa con el siguiente registro
+    
+    if not usuario.get('acc_enddate'):  # Verifica si el campo 'acc_enddate' está vacío o no existe
+        print(f"El registro de {usuario['name']} {usuario['lastname']} no se guardó porque el campo 'acc_enddate' está vacío.")
+        return  # Sale de la función y continúa con el siguiente registro
+    
     """Guarda el usuario en la base de datos PostgreSQL."""
     password_encriptado = encriptar_password(usuario['CardNo'])
     full_name = f"{usuario['name']} {usuario['lastname']}"
